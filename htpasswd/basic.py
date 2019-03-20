@@ -3,6 +3,7 @@ from crypt import crypt
 from string import ascii_letters, digits
 from random import choice
 import subprocess
+import bcrypt
 try:
     from collections import OrderedDict
 except ImportError:
@@ -93,6 +94,8 @@ class Basic(object):
             return self._md5_password(password)
         elif self.encryption_mode.lower() == 'md5-base':
             return self._md5_base_password(password)
+        elif self.encryption_mode.lower() == 'bcrypt':
+            return self._bcrypt_password(password)
         else:
             raise UnknownEncryptionMode(self.encryption_mode)
 
@@ -120,3 +123,14 @@ class Basic(object):
                                         'passwd',
                                         '-1',
                                         password]).decode('utf-8').strip()
+
+    def _bcrypt_password(self, password, **kwargs):
+        """ Crypts password using python bcrypt module.
+
+        Args:
+            **kwargs: Additional keyword args are passed to :py:func:`bcrypt.gensalt`
+        """
+        salt = bcrypt.gensalt(**kwargs)
+        hashpw = bcrypt.hashpw(password.encode('utf-8'), salt)
+        hashpw_unicode = hashpw.decode('utf-8')
+        return hashpw_unicode

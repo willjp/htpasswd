@@ -7,9 +7,9 @@ from setuptools import setup, find_packages
 python_version = "%s.%s" % (version_info[0], version_info[1])
 
 if python_version == "2.7":
-    requires = ["orderedmultidict>=0.7", "future"]
+    requires = ["orderedmultidict>=0.7", "future", "bcrypt"]
 else:
-    requires = ["orderedmultidict>=0.7"]
+    requires = ["orderedmultidict>=0.7", "bcrypt"]
 
 setup(
     name="htpasswd",
