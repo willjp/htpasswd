@@ -1,9 +1,5 @@
 from builtins import object
-from crypt import crypt
-from string import ascii_letters, digits
-from random import choice
-import subprocess
-import bcrypt
+from htpasswd.hashtypes import hash_bcrypt
 try:
     from collections import OrderedDict
 except ImportError:
@@ -36,8 +32,11 @@ class Basic(object):
     """ Basic object deals with Basic HTTP Authorization configuration file.
     It is passed the path to userdb file. """
 
-    def __init__(self, userdb, mode="crypt"):
-        self.encryption_mode = mode
+    def __init__(self, userdb, hashtype=None):
+        # defaults to bcrypt, because cross-platform
+        if hashtype is None:
+            hashtype = hash_bcrypt
+        self.hashtype = hashtype
         self.userdb = userdb
         self.initial_users = OrderedDict()
         self.new_users = OrderedDict()
@@ -88,49 +87,4 @@ class Basic(object):
 
     def _encrypt_password(self, password):
         """encrypt the password for given mode """
-        if self.encryption_mode.lower() == 'crypt':
-            return self._crypt_password(password)
-        elif self.encryption_mode.lower() == 'md5':
-            return self._md5_password(password)
-        elif self.encryption_mode.lower() == 'md5-base':
-            return self._md5_base_password(password)
-        elif self.encryption_mode.lower() == 'bcrypt':
-            return self._bcrypt_password(password)
-        else:
-            raise UnknownEncryptionMode(self.encryption_mode)
-
-    def _crypt_password(self, password):
-        """ Crypts password """
-
-        def salt():
-            """ Generates some salt """
-            symbols = ascii_letters + digits
-            return choice(symbols) + choice(symbols)
-
-        return crypt(password, salt())
-
-    def _md5_password(self, password):
-        """ Crypts password using openssl binary and MD5 (apache variant,
-        'apr1') encryption """
-        return subprocess.check_output(['openssl',
-                                        'passwd',
-                                        '-apr1',
-                                        password]).decode('utf-8').strip()
-
-    def _md5_base_password(self, password):
-        """ Crypts password using openssl binary and MD5 based encryption """
-        return subprocess.check_output(['openssl',
-                                        'passwd',
-                                        '-1',
-                                        password]).decode('utf-8').strip()
-
-    def _bcrypt_password(self, password, **kwargs):
-        """ Crypts password using python bcrypt module.
-
-        Args:
-            **kwargs: Additional keyword args are passed to :py:func:`bcrypt.gensalt`
-        """
-        salt = bcrypt.gensalt(**kwargs)
-        hashpw = bcrypt.hashpw(password.encode('utf-8'), salt)
-        hashpw_unicode = hashpw.decode('utf-8')
-        return hashpw_unicode
+        return self.hashtype.hash_password(password)
