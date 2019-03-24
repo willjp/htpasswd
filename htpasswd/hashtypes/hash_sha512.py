@@ -47,4 +47,8 @@ def check_password(password, password_hash):
     Returns:
         bool: True/False does password match hash
     """
-    return crypt.crypt(password, password_hash) == password_hash
+    (_, algorithm, salt, _) = password_hash.split('$')
+    gensalt = '${}${}'.format(algorithm, salt)
+
+    compare_hash = crypt.crypt(password, gensalt)
+    return compare_hash == password_hash
